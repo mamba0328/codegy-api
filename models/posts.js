@@ -2,7 +2,6 @@ const mongoose = require('mongoose');
 const {Schema} = mongoose;
 
 const posts = new Schema({
-    id: {type: Schema.Types.ObjectId, required: true},
     title: {type: Schema.Types.String, required: true, minLength:1, maxLength: 60, },
     body: {type: Schema.Types.Mixed, required: true, minLength:1,},
     tags: {type: Schema.Types.Array, },

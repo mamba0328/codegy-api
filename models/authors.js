@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const {Schema} = mongoose;
 
 const authors = new Schema({
-    id: {type: Schema.Types.ObjectId, required: true},
+    username: {type: Schema.Types.String, required: true, },
     password: {type: Schema.Types.String, required: true, minLength:8, },
     created_at: {type: Schema.Types.Date, required: true, },
     updated_at: {type: Schema.Types.Date, },
