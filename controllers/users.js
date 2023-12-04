@@ -59,9 +59,69 @@ const createUser = [
     })
 ]
 
+const updateUser = [
+    body('username').if(value => value).trim().isLength({min:8, max:20}).escape(),
+    body('first_name').if(value => value).trim().escape(),
+    body('last_name').if(value => value).trim().escape(),
+    asyncHandler(async (req, res, next) => {
+        const {id,} = req.params;
+        const {email} = req.query;
+        const { username, first_name, last_name, } = req.body;
+
+        const user = id ? await Users.findById(id) : await Users.findOne({email});
+        const userExist = user !== null;
+
+        if(!userExist){
+            const error = new Error('No such user');
+            error.code = 400
+            return next(error);
+        }
+
+        const result = validationResult(req);
+        const errors = result.errors;
+
+        if(errors.length){
+            return res.status(400).json(errors);
+        }
+
+        const now = Date.now();
+
+        const userBody = {
+            _id:id,
+            ...username && {username},
+            ...first_name && {first_name},
+            ...last_name && {last_name},
+            updated_at: now,
+        }
+        await Users.findByIdAndUpdate(user._id, userBody);
+        const updatedUser = await Users.findById(id)
+
+        res.json(updatedUser);
+    })
+]
+
+const deleteUser =  asyncHandler(async (req, res, next) => {
+    const {id,} = req.params;
+    const {email} = req.query;
+
+    const user = id ? await Users.findById(id) : await Users.findOne({email});
+    const userExist = user !== null;
+
+    if(!userExist){
+        const error = new Error('No such user');
+        error.code = 400
+        return next(error);
+    }
+
+    await Users.findByIdAndDelete(user._id);
+
+    res.send(true);
+})
 
 
 module.exports = {
     getUsers,
     createUser,
+    updateUser,
+    deleteUser,
 };

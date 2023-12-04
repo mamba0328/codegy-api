@@ -23,7 +23,7 @@ app.use('/api', apiRouter);
 
 app.use(function(err, req, res, next) {
     console.error(err.stack);
-    res.status(500).send(err);
+    res.status(err.code ?? 500).send(err.message);
 });
 
 module.exports = app;
