@@ -1,8 +1,8 @@
 const asyncHandler = require("express-async-handler");
-const { body, validationResult } = require('express-validator');
+const { body, validationResult, param} = require('express-validator');
 const bcrypt = require('bcryptjs')
 
-const Authors = require('../models/authors');
+const Authors = require('../../models/authors');
 
 const getAuthors = asyncHandler(async (req, res, next) => {
         const {username} = req.query;
@@ -56,6 +56,7 @@ const createAuthor = [
 ]
 
 const updateAuthor = [
+    param('id').isMongoId(),
     body('username').if(value => value).trim().isLength({min:1, max:20}).escape(),
     asyncHandler(async (req, res, next) => {
         const {id,} = req.params;
@@ -92,23 +93,32 @@ const updateAuthor = [
     })
 ]
 
-const deleteAuthor =  asyncHandler(async (req, res, next) => {
-    const {id,} = req.params;
-    const {username} = req.query;
+const deleteAuthor =  [
+    param('id').isMongoId(),
+    asyncHandler(async (req, res, next) => {
+        const {id,} = req.params;
+        const {username} = req.query;
 
-    const author = id ? await Authors.findById(id) : await Authors.findOne({username});
-    const authorExist = author !== null;
+        const result = validationResult(req);
+        const errors = result.errors;
 
-    if(!authorExist){
-        const error = new Error('No such author');
-        error.code = 400
-        return next(error);
-    }
+        if(errors.length){
+            return res.status(400).json(errors);
+        }
 
-    await Authors.findByIdAndDelete(author._id);
+        const author = id ? await Authors.findById(id) : await Authors.findOne({username});
+        const authorExist = author !== null;
 
-    res.send(true);
-})
+        if(!authorExist){
+            const error = new Error('No such author');
+            error.code = 400
+            return next(error);
+        }
+
+        await Authors.findByIdAndDelete(author._id);
+
+        res.send(true);
+})]
 
 
 module.exports = {

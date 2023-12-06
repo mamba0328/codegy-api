@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const {getPostsComments, createPostComment, updatePostComment, deletePostComment} = require('../controllers/postsComments')
+const {getPostsComments, createPostComment, updatePostComment, deletePostComment} = require('../../controllers/api/postsComments')
 
 router.get('/', getPostsComments);
 

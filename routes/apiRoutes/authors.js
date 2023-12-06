@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const {getAuthors, createAuthor, updateAuthor, deleteAuthor} = require('../controllers/authors')
+const {getAuthors, createAuthor, updateAuthor, deleteAuthor} = require('../../controllers/api/authors')
 
 router.get('/', getAuthors);
 

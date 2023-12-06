@@ -1,8 +1,8 @@
 const asyncHandler = require("express-async-handler");
-const { body, validationResult } = require('express-validator');
+const { body, param, validationResult } = require('express-validator');
 const bcrypt = require('bcryptjs')
 
-const Users = require('../models/users');
+const Users = require('../../models/users');
 
 const getUsers = asyncHandler(async (req, res, next) => {
         const {email, username} = req.query;
@@ -19,7 +19,7 @@ const createUser = [
     body('confirmPassword').custom((value, { req }) => {
         return value === req.body.password;
     }),
-    body('username').trim().isLength({min:8, max:20}).escape(),
+    body('username').trim().isLength({max:20}).escape(),
     body('first_name').escape(),
     body('last_name').escape(),
     asyncHandler(async (req, res, next) => {
@@ -60,6 +60,7 @@ const createUser = [
 ]
 
 const updateUser = [
+    param('id').isMongoId,
     body('username').if(value => value).trim().isLength({min:8, max:20}).escape(),
     body('first_name').if(value => value).trim().escape(),
     body('last_name').if(value => value).trim().escape(),
@@ -68,6 +69,13 @@ const updateUser = [
         const {email} = req.query;
         const { username, first_name, last_name, } = req.body;
 
+        const result = validationResult(req);
+        const errors = result.errors;
+
+        if(errors.length){
+            return res.status(400).json(errors);
+        }
+
         const user = id ? await Users.findById(id) : await Users.findOne({email});
         const userExist = user !== null;
 
@@ -75,13 +83,6 @@ const updateUser = [
             const error = new Error('No such user');
             error.code = 400
             return next(error);
-        }
-
-        const result = validationResult(req);
-        const errors = result.errors;
-
-        if(errors.length){
-            return res.status(400).json(errors);
         }
 
         const now = Date.now();
@@ -100,23 +101,32 @@ const updateUser = [
     })
 ]
 
-const deleteUser =  asyncHandler(async (req, res, next) => {
-    const {id,} = req.params;
-    const {email} = req.query;
+const deleteUser =  [
+    param('id').isMongoId,
+    asyncHandler(async (req, res, next) => {
+        const {id,} = req.params;
+        const {email} = req.query;
 
-    const user = id ? await Users.findById(id) : await Users.findOne({email});
-    const userExist = user !== null;
+        const result = validationResult(req);
+        const errors = result.errors;
 
-    if(!userExist){
-        const error = new Error('No such user');
-        error.code = 400
-        return next(error);
-    }
+        if(errors.length){
+            return res.status(400).json(errors);
+        }
 
-    await Users.findByIdAndDelete(user._id);
+        const user = id ? await Users.findById(id) : await Users.findOne({email});
+        const userExist = user !== null;
 
-    res.send(true);
-})
+        if(!userExist){
+            const error = new Error('No such user');
+            error.code = 400
+            return next(error);
+        }
+
+        await Users.findByIdAndDelete(user._id);
+
+        res.send(true);
+})]
 
 
 module.exports = {

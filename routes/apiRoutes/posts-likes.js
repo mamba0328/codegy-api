@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
 
-const {getPostsLikes, createPostLike, deletePostLike} = require('../controllers/postsLikes')
+const {getPostsLikes, createPostLike, deletePostLike} = require('../../controllers/api/postsLikes')
 
 router.get('/', getPostsLikes);
 
 router.post('/', createPostLike);
 
-router.delete('/:id', deletePostLike);
+router.delete('/', deletePostLike);
 
 module.exports = router;

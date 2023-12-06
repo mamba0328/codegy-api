@@ -1,8 +1,8 @@
 const asyncHandler = require("express-async-handler");
-const { body, validationResult } = require('express-validator');
+const { body, validationResult, param } = require('express-validator');
 
-const Posts = require('../models/posts');
-const Authors = require('../models/authors');
+const Posts = require('../../models/posts');
+const Authors = require('../../models/authors');
 
 const getPosts = asyncHandler(async (req, res, next) => {
         const skip = req.query.skip ?? 0;
@@ -43,6 +43,7 @@ const createPost = [
 ]
 
 const updatePost = [
+    param('id').isMongoId(),
     body('title').trim().isLength({min:1, max:60}).escape(),
     body('body').trim().isLength({min:1,}).escape(),
     asyncHandler(async (req, res, next) => {
@@ -80,22 +81,31 @@ const updatePost = [
     })
 ]
 
-const deletePost =  asyncHandler(async (req, res, next) => {
-    const {id,} = req.params;
+const deletePost =  [
+    param('id').isMongoId(),
+    asyncHandler(async (req, res, next) => {
+        const {id,} = req.params;
 
-    const post = await Posts.findById(id);
-    const postExist = post !== null;
+        const result = validationResult(req);
+        const errors = result.errors;
 
-    if(!postExist){
-        const error = new Error('No such post');
-        error.code = 400
-        return next(error);
-    }
+        if(errors.length){
+            return res.status(400).json(errors);
+        }
 
-    await Posts.findByIdAndDelete(post._id);
+        const post = await Posts.findById(id);
+        const postExist = post !== null;
 
-    res.send(true);
-})
+        if(!postExist){
+            const error = new Error('No such post');
+            error.code = 400
+            return next(error);
+        }
+
+        await Posts.findByIdAndDelete(post._id);
+
+        res.send(true);
+})]
 
 
 module.exports = {

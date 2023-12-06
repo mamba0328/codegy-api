@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
 
-const usersRouter = require('./users')
-const authorsRouter = require('./authors')
-const postsRouter = require('./posts')
-const postsCommentsRouter = require('./posts-comments')
-const postsLikesRouter = require('./posts-likes')
+const usersRouter = require('./apiRoutes/users')
+const authorsRouter = require('./apiRoutes/authors')
+const postsRouter = require('./apiRoutes/posts')
+const postsCommentsRouter = require('./apiRoutes/posts-comments')
+const postsLikesRouter = require('./apiRoutes/posts-likes')
 
 
 router.use('/users', usersRouter);

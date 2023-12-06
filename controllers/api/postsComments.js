@@ -1,9 +1,9 @@
 const asyncHandler = require("express-async-handler");
-const { body, validationResult } = require('express-validator');
+const { body, validationResult, param} = require('express-validator');
 
-const Posts = require('../models/posts');
-const PostsComments = require('../models/postsComments');
-const Users = require('../models/users');
+const Posts = require('../../models/posts');
+const PostsComments = require('../../models/postsComments');
+const Users = require('../../models/users');
 
 const getPostsComments = asyncHandler(async (req, res, next) => {
         const skip = req.query.skip ?? 0;
@@ -15,8 +15,8 @@ const getPostsComments = asyncHandler(async (req, res, next) => {
 
 const createPostComment = [
     body('body').trim().isLength({min:1, max:300}).escape(),
-    body('post_id').notEmpty(),
-    body('user_id').notEmpty(),
+    body('post_id').isMongoId().notEmpty(),
+    body('user_id').isMongoId().notEmpty(),
     asyncHandler(async (req, res, next) => {
         const { body, user_id, post_id, } = req.body;
 
@@ -52,10 +52,18 @@ const createPostComment = [
 ]
 
 const updatePostComment = [
+    param('id').isMongoId,
     body('body').trim().isLength({min:1, max:300}).escape(),
     asyncHandler(async (req, res, next) => {
         const {id,} = req.params;
         const { body, } = req.body;
+
+        const result = validationResult(req);
+        const errors = result.errors;
+
+        if(errors.length){
+            return res.status(400).json(errors);
+        }
 
         const postComment = await PostsComments.findById(id);
         const postExist = postComment !== null;
@@ -64,13 +72,6 @@ const updatePostComment = [
             const error = new Error('No such post comment');
             error.code = 400
             return next(error);
-        }
-
-        const result = validationResult(req);
-        const errors = result.errors;
-
-        if(errors.length){
-            return res.status(400).json(errors);
         }
 
         const now = Date.now();
@@ -86,22 +87,31 @@ const updatePostComment = [
     })
 ]
 
-const deletePostComment =  asyncHandler(async (req, res, next) => {
-    const {id,} = req.params;
+const deletePostComment =  [
+    param('id').isMongoId(),
+    asyncHandler(async (req, res, next) => {
+        const {id,} = req.params;
 
-    const postComment = await PostsComments.findById(id);
-    const postExist = postComment !== null;
+        const result = validationResult(req);
+        const errors = result.errors;
 
-    if(!postExist){
-        const error = new Error('No such post comment');
-        error.code = 400
-        return next(error);
-    }
+        if(errors.length){
+            return res.status(400).json(errors);
+        }
 
-    await PostsComments.findByIdAndDelete(postComment._id);
+        const postComment = await PostsComments.findById(id);
+        const postExist = postComment !== null;
 
-    res.send(true);
-})
+        if(!postExist){
+            const error = new Error('No such post comment');
+            error.code = 400
+            return next(error);
+        }
+
+        await PostsComments.findByIdAndDelete(postComment._id);
+
+        res.send(true);
+})]
 
 
 module.exports = {
