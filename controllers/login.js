@@ -5,12 +5,13 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require('bcryptjs');
 
 const Users = require('../models/users');
+const Author = require('../models/authors');
 
 const login = [
     body('email').isEmail(),
     body('password').isLength({min: 8}),
     asyncHandler(async (req, res, next) => {
-        let { email, password } = req.body;
+        let { email, password, is_author} = req.body;
 
         const result = validationResult(req);
         const errors = result.errors;
@@ -19,14 +20,16 @@ const login = [
             return res.status(400).json(errors);
         }
 
-        const user = await Users.findOne({email}).select('+password');
-        const userExist = user !== null;
+        const Model = is_author ? Author : Users;
 
-        if(!userExist){
+        const entity = await Model.findOne({email}).select('+password');
+        const entityExist = entity !== null;
+
+        if(!entityExist){
             return res.status(401).json({ message: "Email or password are wrong"})
         }
 
-        const passwordIsValid = await bcrypt.compare(password, user.password);
+        const passwordIsValid = await bcrypt.compare(password, entity.password);
 
         if(!passwordIsValid){
             return res.status(401).json({ message: "Email or password are wrong" })
@@ -41,8 +44,8 @@ const login = [
         const secret = process.env.JWT_SECRET;
         const refreshSecret = process.env.REFRESH_SECRET;
 
-        const token = jwt.sign({ _id: user._id }, secret, opts);
-        const refreshToken = jwt.sign({_id: user._id}, refreshSecret, refreshOpts);
+        const token = jwt.sign({ _id: entity._id }, secret, opts);
+        const refreshToken = jwt.sign({_id: entity._id}, refreshSecret, refreshOpts);
 
         //expires converted to ms from mins
         return res.status(200).cookie('refreshToken', refreshToken, { expires: new Date(Date.now() + refreshOpts.expiresIn * 1000), httpOnly: true }).json({
@@ -51,5 +54,8 @@ const login = [
         })
     }),
 ]
+
+
+module.exports = {login}
 
 module.exports = {login}
