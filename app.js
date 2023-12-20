@@ -13,6 +13,7 @@ const { connectToMongoDB } = require('./db/connectMongoDB');
 const indexRouter = require('./routes/index');
 const apiRouter = require('./routes/api');
 const loginRouter = require('./routes/login');
+const refreshRouter = require('./routes/refresh');
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use(connectToMongoDB)
 app.use('/', indexRouter);
 app.use('/api', passport.authenticate('jwt', { session: false }), apiRouter);
 app.use('/login', loginRouter);
+app.use('/refresh', refreshRouter);
 
 app.use(function(err, req, res, next) {
     console.error(err.stack);

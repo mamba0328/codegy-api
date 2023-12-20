@@ -33,10 +33,19 @@ const login = [
         }
 
         const opts = {}
-        opts.expiresIn = 60 * 60 * 24; //day
-        const secret = process.env.JWT_SECRET
+        opts.expiresIn = 60 * 15; //15 min
+
+        const refreshOpts = {};
+        refreshOpts.expiresIn = 60 * 60 * 24 * 14 // 2 weeks
+
+        const secret = process.env.JWT_SECRET;
+        const refreshSecret = process.env.REFRESH_SECRET;
+
         const token = jwt.sign({ _id: user._id }, secret, opts);
-        return res.status(200).json({
+        const refreshToken = jwt.sign({_id: user._id}, refreshSecret, refreshOpts);
+
+        //expires converted to ms from mins
+        return res.status(200).cookie('refreshToken', refreshToken, { expires: new Date(Date.now() + refreshOpts.expiresIn * 1000), httpOnly: true }).json({
             message: "Auth Passed",
             token
         })
