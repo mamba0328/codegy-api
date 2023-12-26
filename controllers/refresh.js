@@ -8,14 +8,13 @@ const Author = require('../models/authors');
 
 const refresh = [
     asyncHandler(async (req, res, next) => {
-        const { is_author } = req.params;
         const { refreshToken, } = req.cookies;
 
         if(!refreshToken){
             return res.status(401).message('Unauthorized');
         }
 
-        const {_id} = jwtDecode(refreshToken)
+        const {_id, is_author} = jwtDecode(refreshToken)
 
         const Model = is_author ? Author : Users;
         const entity = await Model.findById(_id);
@@ -30,7 +29,7 @@ const refresh = [
         opts.expiresIn = 60 * 15; //15 mins
 
         const secret = process.env.JWT_SECRET;
-        const token = jwt.sign({ _id: entity._id }, secret, opts);
+        const token = jwt.sign({ _id: entity._id, is_author: !!is_author,}, secret, opts);
 
         return res.status(200).json({
             message: "Auth Passed",

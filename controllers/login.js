@@ -8,10 +8,10 @@ const Users = require('../models/users');
 const Author = require('../models/authors');
 
 const login = [
-    body('email').isEmail(),
+    body('email').isEmail().optional(),
     body('password').isLength({min: 8}),
     asyncHandler(async (req, res, next) => {
-        let { email, password, is_author} = req.body;
+        let { email, password, username, is_author} = req.body;
 
         const result = validationResult(req);
         const errors = result.errors;
@@ -22,7 +22,7 @@ const login = [
 
         const Model = is_author ? Author : Users;
 
-        const entity = await Model.findOne({email}).select('+password');
+        const entity = await Model.findOne(is_author ? {username} : {email}).select('+password');
         const entityExist = entity !== null;
 
         if(!entityExist){
@@ -44,8 +44,8 @@ const login = [
         const secret = process.env.JWT_SECRET;
         const refreshSecret = process.env.REFRESH_SECRET;
 
-        const token = jwt.sign({ _id: entity._id }, secret, opts);
-        const refreshToken = jwt.sign({_id: entity._id}, refreshSecret, refreshOpts);
+        const token = jwt.sign({ _id: entity._id, is_author: !!is_author, }, secret, opts);
+        const refreshToken = jwt.sign({_id: entity._id, is_author: !!is_author, }, refreshSecret, refreshOpts);
 
         //expires converted to ms from mins
         return res.status(200).cookie('refreshToken', refreshToken, { expires: new Date(Date.now() + refreshOpts.expiresIn * 1000), httpOnly: true }).json({

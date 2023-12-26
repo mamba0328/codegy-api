@@ -14,6 +14,7 @@ const getAuthors = asyncHandler(async (req, res, next) => {
 });
 
 const createAuthor = [
+    body('email').trim().isEmail().normalizeEmail(),
     body('username').isLength({min:1, max:20}).escape(),
     body('password').isLength({min:8, max:64}),
     body('confirmPassword').custom((value, { req }) => {
