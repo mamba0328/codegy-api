@@ -3,21 +3,28 @@ const { body, validationResult, param } = require('express-validator');
 
 const Posts = require('../../models/posts');
 const Authors = require('../../models/authors');
+const {jwtDecode} = require("jwt-decode");
 
 const getPosts = asyncHandler(async (req, res, next) => {
         const skip = req.query.skip ?? 0;
         const limit = req.query.limit ?? 50;
 
-        const posts = await Posts.find().skip(skip).limit(limit);
+        const posts = await Posts.find().populate('author_id').skip(skip).limit(limit);
+        return res.send(posts);
+});
+
+const getSinglePost = asyncHandler(async (req, res, next) => {
+        const postId = req.params.id;
+        const posts = await Posts.findById(postId).populate('author_id');
         return res.send(posts);
 });
 
 const createPost = [
     body('title').trim().isLength({min:1, max:60}).escape(),
-    body('body').trim().isLength({min:1,}).escape(),
-    body('author_id').notEmpty(),
+    body('body').trim().isLength({min:1,}),
     asyncHandler(async (req, res, next) => {
-        const { title, body, tags, author_id, } = req.body;
+        const { refreshToken, } = req.cookies;
+        const { title, body, tags, } = req.body;
 
         const result = validationResult(req);
         const errors = result.errors;
@@ -26,6 +33,7 @@ const createPost = [
             return res.status(400).json(errors);
         }
 
+        const {_id:author_id} = jwtDecode(refreshToken)
         const authorExist = await Authors.findById(author_id);
 
         if(!authorExist){
@@ -44,11 +52,12 @@ const createPost = [
 
 const updatePost = [
     param('id').isMongoId(),
-    body('title').trim().isLength({min:1, max:60}).escape(),
-    body('body').trim().isLength({min:1,}).escape(),
+    body('title').trim().isLength({min:1, max:60}).escape().optional(),
+    body('body').trim().isLength({min:1,}).optional(),
+    body('status').isNumeric().optional(),
     asyncHandler(async (req, res, next) => {
         const {id,} = req.params;
-        const { title, body, tags, } = req.body;
+        const { title, body, tags, status, } = req.body;
 
         const post = await Posts.findById(id);
         const postExist = post !== null;
@@ -72,6 +81,7 @@ const updatePost = [
             ...title && {title},
             ...body && {body},
             ...tags && {tags},
+            ...status && {status},
             updated_at: now,
         }
         await Posts.findByIdAndUpdate(post._id, postBody);
@@ -110,6 +120,7 @@ const deletePost =  [
 
 module.exports = {
     getPosts,
+    getSinglePost,
     createPost,
     updatePost,
     deletePost,
