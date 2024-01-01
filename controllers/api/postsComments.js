@@ -6,10 +6,11 @@ const PostsComments = require('../../models/postsComments');
 const Users = require('../../models/users');
 
 const getPostsComments = asyncHandler(async (req, res, next) => {
+        const post_id = req.query.post_id;
         const skip = req.query.skip ?? 0;
         const limit = req.query.limit ?? 50;
 
-        const posts = await PostsComments.find().skip(skip).limit(limit);
+        const posts = await PostsComments.find({...post_id && {post_id}}).skip(skip).limit(limit).populate('user_id');
         return res.send(posts);
 });
 

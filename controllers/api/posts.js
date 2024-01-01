@@ -85,7 +85,7 @@ const updatePost = [
             updated_at: now,
         }
         await Posts.findByIdAndUpdate(post._id, postBody);
-        const updatedPost = await Posts.findById(id)
+        const updatedPost = await Posts.findById(id).populate('author_id');
 
         res.json(updatedPost);
     })
