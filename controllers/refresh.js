@@ -9,9 +9,11 @@ const Author = require('../models/authors');
 const refresh = [
     asyncHandler(async (req, res, next) => {
         const { refreshToken, } = req.cookies;
-
         if(!refreshToken){
-            return res.status(401).message('Unauthorized');
+           const error = new Error();
+           error.code = 401;
+           error.message = 'Unauthorized';
+           throw error
         }
 
         const {_id, is_author} = jwtDecode(refreshToken)
@@ -21,7 +23,10 @@ const refresh = [
         const entityExist = entity !== null;
 
         if(!entityExist){
-            return res.status(401).json({ message: "No such entity"})
+            const error = new Error();
+            error.code = 401;
+            error.message = 'Unauthorized';
+            throw error
         }
 
 
@@ -30,8 +35,9 @@ const refresh = [
 
         const secret = process.env.JWT_SECRET;
         const token = jwt.sign({ _id: entity._id, is_author: !!is_author,}, secret, opts);
+        console.log(token)
 
-        return res.status(200).json({
+        return res.send({
             message: "Auth Passed",
             token
         })

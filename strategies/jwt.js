@@ -14,7 +14,6 @@ opts.secretOrKey = process.env.JWT_SECRET; //normally store this in process.env.
 module.exports = new JwtStrategy(opts, async function(jwt_payload, done) {
     try {
         const isAuthor = jwt_payload.is_author;
-
         const Model = isAuthor ? Authors : Users;
         const entity = await Model.findById(jwt_payload._id);
         const entityExist = entity !== null;
