@@ -9,7 +9,7 @@ const getPosts = asyncHandler(async (req, res, next) => {
         const skip = req.query.skip ?? 0;
         const limit = req.query.limit ?? 50;
 
-        const posts = await Posts.find().populate('author_id').skip(skip).limit(limit);
+        const posts = await Posts.find().populate('author_id').skip(skip).sort('-created_at').limit(limit);
         return res.send(posts);
 });
 

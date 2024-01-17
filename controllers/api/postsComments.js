@@ -4,22 +4,25 @@ const { body, validationResult, param} = require('express-validator');
 const Posts = require('../../models/posts');
 const PostsComments = require('../../models/postsComments');
 const Users = require('../../models/users');
+const {jwtDecode} = require("jwt-decode");
 
 const getPostsComments = asyncHandler(async (req, res, next) => {
         const post_id = req.query.post_id;
         const skip = req.query.skip ?? 0;
         const limit = req.query.limit ?? 50;
 
-        const posts = await PostsComments.find({...post_id && {post_id}}).skip(skip).limit(limit).populate('user_id');
+        const posts = await PostsComments.find({...post_id && {post_id}}).skip(skip).limit(limit).sort('-created_at').populate('user_id');
         return res.send(posts);
 });
 
 const createPostComment = [
     body('body').trim().isLength({min:1, max:300}).escape(),
     body('post_id').isMongoId().notEmpty(),
-    body('user_id').isMongoId().notEmpty(),
     asyncHandler(async (req, res, next) => {
-        const { body, user_id, post_id, } = req.body;
+        const { refreshToken, } = req.cookies;
+        const {_id:user_id} = jwtDecode(refreshToken)
+
+        const { body, post_id, } = req.body;
 
         const result = validationResult(req);
         const errors = result.errors;
@@ -47,8 +50,9 @@ const createPostComment = [
         const now = Date.now();
 
         const newPostComment = await PostsComments.create({body, post_id, user_id, created_at: now, updated_at:now});
+        const newPostCommentWithUser = await PostsComments.findById(newPostComment._id).populate('user_id');
 
-        res.json(newPostComment);
+        res.json(newPostCommentWithUser);
     })
 ]
 

@@ -4,20 +4,42 @@ const { body, query, validationResult } = require('express-validator');
 const PostsLikes = require('../../models/postsLikes');
 const Posts = require('../../models/posts');
 const Users = require('../../models/users');
+const {jwtDecode} = require("jwt-decode");
 
 const getPostsLikes = asyncHandler(async (req, res, next) => {
         const skip = req.query.skip ?? 0;
         const limit = req.query.limit ?? 50;
 
-        const posts = await PostsLikes.find().skip(skip).limit(limit);
-        return res.send(posts);
+        const postsLikes = await PostsLikes.find().skip(skip).limit(limit);
+        return res.send(postsLikes);
 });
+
+const getPostLikeByUser = [
+    query('post_id').isMongoId(),
+    asyncHandler(async (req, res, next) => {
+        const { refreshToken, } = req.cookies;
+        const {_id:user_id} = jwtDecode(refreshToken)
+        const {post_id,} = req.query;
+
+        const result = validationResult(req);
+        const errors = result.errors;
+
+        if(errors.length){
+            return res.status(400).json(errors);
+        }
+
+        const postsLike = await PostsLikes.findOne({post_id, user_id});
+        console.log(postsLike)
+
+        return res.send(!!postsLike);
+})];
 
 const createPostLike = [
     body('post_id').isMongoId().notEmpty(),
-    body('user_id').isMongoId().notEmpty(),
     asyncHandler(async (req, res, next) => {
-        const { user_id, post_id, } = req.body;
+        const { refreshToken, } = req.cookies;
+        const {_id:user_id} = jwtDecode(refreshToken)
+        const { post_id, } = req.body;
 
         const result = validationResult(req);
         const errors = result.errors;
@@ -59,11 +81,11 @@ const createPostLike = [
 ]
 
 const deletePostLike =  [
-    query('user_id').isMongoId(),
     query('post_id').isMongoId(),
-
     asyncHandler(async (req, res, next) => {
-        const {user_id, post_id,} = req.query;
+        const { refreshToken, } = req.cookies;
+        const {_id:user_id} = jwtDecode(refreshToken)
+        const {post_id,} = req.query;
 
         const result = validationResult(req);
         const errors = result.errors;
@@ -91,4 +113,5 @@ module.exports = {
     getPostsLikes,
     createPostLike,
     deletePostLike,
+    getPostLikeByUser,
 };
